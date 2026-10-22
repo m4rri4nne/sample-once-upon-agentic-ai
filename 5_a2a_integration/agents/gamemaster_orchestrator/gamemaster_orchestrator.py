@@ -8,8 +8,6 @@ from tinydb import TinyDB, Query
 from strands import Agent
 from strands.vended_tools import make_a2a_client
 from strands.tools.mcp import MCPClient
-from mcp.client.streamable_http import streamablehttp_client
-
 app = FastAPI(title="Game Master API")
 origins = ["*"]
 app.add_middleware(
@@ -44,6 +42,7 @@ def get_user(user_name):
     return character
 
 # TODO: Step 1 - Create a streamable http MCPClient connecting to "http://localhost:8002/mcp"
+mcp_client = MCPClient(url="http://localhost:8002/mcp")
 
 class DiceOutput(BaseModel):
     dice_type: str = Field(description="The dice type. Ex: d4, d6, d20, etc")
@@ -59,11 +58,14 @@ class StoryOutput(BaseModel):
 
 try:
     # TODO: Step 2 - Create the A2A client tool with make_a2a_client and the allowed agent endpoints
+    a2a_client = make_a2a_client(allowed_endpoints=["/rules", "/characters"])
 
     agent = Agent(
         system_prompt="""You are a Game Master for a fantasy role-playing game. Discover the agents you can reach and ask them instead of guessing: rules questions, character creation and lookups are their job. Every dice roll goes through roll_dice. Never make up what a tool can tell you, and narrate with flair.""",
         # TODO: Step 3 - Add the mcp_client and a2a_client tools to the agent
+        tools=[mcp_client, a2a_client],
         # TODO: Step 4 - Force the response to use the StoryOutput model
+        structured_output_model=StoryOutput
     )
     print(agent)
 
